@@ -1,12 +1,18 @@
 package com.example.android.miwok;
 
+import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
 public class ColorsActivity extends AppCompatActivity {
+
+    private WordAdapter itemsAdapter;
+    private MediaPlayer mMediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,10 +29,33 @@ public class ColorsActivity extends AppCompatActivity {
         words.add(new Word("black", "kululli", R.drawable.color_black, R.raw.color_black));
         words.add(new Word("white", "kelelli", R.drawable.color_white, R.raw.color_white));
 
-        WordAdapter itemsAdapter = new WordAdapter(this, words, R.color.category_colors);
+        itemsAdapter = new WordAdapter(this, words, R.color.category_colors);
 
         ListView listView = (ListView) findViewById(R.id.list);
 
         listView.setAdapter(itemsAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                releaseMediaPlayer();
+                Word word = itemsAdapter.getItem(position);
+                mMediaPlayer = MediaPlayer.create(ColorsActivity.this, word.getSoundResourceId());
+                mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+                        releaseMediaPlayer();
+                    }
+                });
+                mMediaPlayer.start();
+
+            }
+        });
+    }
+
+    private void releaseMediaPlayer() {
+        if (mMediaPlayer != null) {
+            mMediaPlayer.release();
+            mMediaPlayer = null;
+        }
     }
 }

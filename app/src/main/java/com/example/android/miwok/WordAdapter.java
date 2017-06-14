@@ -48,13 +48,6 @@ public class WordAdapter extends ArrayAdapter<Word> {
         int color = ContextCompat.getColor(getContext(), colorResourceId);
         textContainer.setBackgroundColor(color);
 
-        listItemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MediaPlayer mediaPlayer = MediaPlayer.create(parent.getContext(), getItem(position).getSoundResourceId());
-                mediaPlayer.start();
-            }
-        });
         return listItemView;
     }
 }

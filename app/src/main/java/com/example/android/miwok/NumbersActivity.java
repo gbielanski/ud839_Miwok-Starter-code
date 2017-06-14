@@ -1,12 +1,18 @@
 package com.example.android.miwok;
 
+import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
 public class NumbersActivity extends AppCompatActivity {
+
+    private WordAdapter itemsAdapter;
+    private MediaPlayer mMediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,11 +31,33 @@ public class NumbersActivity extends AppCompatActivity {
         words.add(new Word("nine", "wo’e", R.drawable.number_nine, R.raw.number_nine));
         words.add(new Word("ten", "na’aacha", R.drawable.number_ten, R.raw.number_ten));
 
-        WordAdapter itemsAdapter = new WordAdapter(this, words, R.color.category_numbers);
+        itemsAdapter = new WordAdapter(this, words, R.color.category_numbers);
 
         ListView listView = (ListView) findViewById(R.id.list);
 
         listView.setAdapter(itemsAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                releaseMediaPlayer();
+                Word word = itemsAdapter.getItem(position);
+                mMediaPlayer = MediaPlayer.create(NumbersActivity.this, word.getSoundResourceId());
+                mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+                        releaseMediaPlayer();
+                    }
+                });
+                mMediaPlayer.start();
 
+            }
+        });
+    }
+
+    private void releaseMediaPlayer() {
+        if (mMediaPlayer != null) {
+            mMediaPlayer.release();
+            mMediaPlayer = null;
+        }
     }
 }
