@@ -1,5 +1,7 @@
 package com.example.android.miwok;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,6 +15,48 @@ public class NumbersActivity extends AppCompatActivity {
 
     private WordAdapter itemsAdapter;
     private MediaPlayer mMediaPlayer;
+
+    AdapterView.OnItemClickListener mOnItemClickListener = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            releaseMediaPlayer();
+            Word word = itemsAdapter.getItem(position);
+            mMediaPlayer = MediaPlayer.create(NumbersActivity.this, word.getSoundResourceId());
+            mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    releaseMediaPlayer();
+                    mAudioManager.abandonAudioFocus(onAudioFocusChangeListener);
+                }
+            });
+            int result = mAudioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                mMediaPlayer.start();
+            }
+        }
+    };
+
+    AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            switch (focusChange){
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    mMediaPlayer.start();
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                    mMediaPlayer.stop();
+                    releaseMediaPlayer();
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    mMediaPlayer.pause();
+                    mMediaPlayer.seekTo(0);
+                    break;
+            }
+        }
+    };
+
+    AudioManager mAudioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,28 +80,21 @@ public class NumbersActivity extends AppCompatActivity {
         ListView listView = (ListView) findViewById(R.id.list);
 
         listView.setAdapter(itemsAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                releaseMediaPlayer();
-                Word word = itemsAdapter.getItem(position);
-                mMediaPlayer = MediaPlayer.create(NumbersActivity.this, word.getSoundResourceId());
-                mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-                        releaseMediaPlayer();
-                    }
-                });
-                mMediaPlayer.start();
-
-            }
-        });
+        listView.setOnItemClickListener(mOnItemClickListener);
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
     }
 
     private void releaseMediaPlayer() {
         if (mMediaPlayer != null) {
             mMediaPlayer.release();
             mMediaPlayer = null;
+            mAudioManager.abandonAudioFocus(onAudioFocusChangeListener);
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        releaseMediaPlayer();
     }
 }
